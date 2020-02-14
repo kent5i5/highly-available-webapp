@@ -1,6 +1,127 @@
 Description: >
-    Ying Kit Ng / Udacity project 2020
+ This template deploys 4 Ubuntu 18 server with two vCPUs and at least 4GB of RAM and 10GB of disk space.
+ 2 server will be located in each of your private subnets. Data will be retrieve from S3 bucket. 
+ Triffic will go through a load balancer
+ ying kit ng Feb 13, 2020
+Parameters:
+# whatever you consider a changing value, put it as a parameter instead of hard-coding it into your script
+    EnvironmentName:
+        Description: An Environment name that will be prefixed to resources
+        Type: String
 
+    VpcCIDR:
+        Description: Please enter the IP range (CIDR notation) for this
+        Type: String
+        Default: 10.0.0.0/16
 Resources:
-    VPC:
+  #instace profile contains the IAM Role name(s) that we want to associate to our auto scaling EC2 Servers
+  ProfileWithRolesForOurApp:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Roles:
+        - UdacityS3ReadOnlyEC2
+  
+          #!/bin/bash
+          apt-get update -y
+          apt-get install unzip awscli -y
+          apt-get install apache2 -y
+          systemctl start apache2.service
+          cd /var/www/html
+          aws s3 cp s3://udacity-demo-1/udacity.zip .
+          unzip -o udacity.zip
+  VPC:
         TYPE: AWS::EC2::VPC
+        Properties: 
+          CidrBlock: !Ref VpcCIDR
+          EnableDnsHostnames: true
+          EnableDnsSupport: Boolean
+          InstanceTenancy: String
+          Tags: 
+            - Key: Name
+              Value: !Ref EnvironmentName
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name 
+        Value: EnvironmentName
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+        VpcId: !Ref VPC
+        AvailabilityZone: !Select [ 0, !GetAZ's '' ]
+        CirderBlock: !Ref PublicSubnet1CIDR
+        MapPublicIpOnLaunch: false
+        Tags: 
+            -   Key: Name
+                Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+        VpcId: !Ref VPC
+        AvailabilityZone: !Select [ 1, !GetAZ's '' ]
+        CirderBlock: !Ref PublicSubnet1CIDR
+        MapPublicIpOnLaunch: false
+        Tags: 
+            -   Key: Name
+                Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+        VpcId: !Ref VPC
+        AvailabilityZone: !Select [ 0, !GetAZ's '' ]
+        CirderBlock: !Ref PrivateSubnet1CIDR
+        MapPublicIpOnLaunch: false
+        Tags: 
+            -   Key: Name
+                Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+        VpcId: !Ref VPC
+        AvailabilityZone: !Select [ 1, !GetAZ's '' ]
+        CirderBlock: !Ref PrivateSubnet1CIDR
+        MapPublicIpOnLaunch: false
+        Tags: 
+            -   Key: Name
+                Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
+                
+  NatGateway1EIP:
+        Type: AWS::EC2::EIP
+        DependsOn: AttachGateway
+        Properties: 
+            Domain: vpc
+  
+  NatGateway2EIP:
+        Type: AWS::EC2::EIP
+        DependsOn: AttachGateway
+        Properties: 
+            Domain: vpc
+  
+  NatGateway1: 
+        Type: AWS::EC2::NatGateway
+        Properties: 
+            AllocationId: !GetAtt NatGateway1EIP.AllocationId
+            SubnetId: !Ref PublicSubnet1
+
+  NatGateway2: 
+        Type: AWS::EC2::NatGateway
+        Properties: 
+            AllocationId: !GetAtt NatGateway1EIP.AllocationId
+            SubnetId: !Ref PublicSubnet2
+Outputs: 
+  #Bonus points for useful outputs!
+  Description: output will be the public URL of loadbalancer
+  # Value: 
+  # Export:
+  #   Name:
