@@ -52,29 +52,18 @@ Resources:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
 
-  PublicSubnet1:
+  PublicSubnet:
     Type: AWS::EC2::Subnet
     Properties:
         VpcId: !Ref VPC
         AvailabilityZone: !Select [ 0, !GetAZ's '' ]
-        CirderBlock: !Ref PublicSubnet1CIDR
+        CirderBlock: !Ref PublicSubnetCIDR
         MapPublicIpOnLaunch: false
         Tags: 
             -   Key: Name
-                Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
+                Value: !Sub ${EnvironmentName} PublicSubnet (AZ1)
 
-  PublicSubnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-        VpcId: !Ref VPC
-        AvailabilityZone: !Select [ 1, !GetAZ's '' ]
-        CirderBlock: !Ref PublicSubnet1CIDR
-        MapPublicIpOnLaunch: false
-        Tags: 
-            -   Key: Name
-                Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
-
-  PrivateSubnet1:
+  PrivateSubnet:
     Type: AWS::EC2::Subnet
     Properties:
         VpcId: !Ref VPC
@@ -84,41 +73,19 @@ Resources:
         Tags: 
             -   Key: Name
                 Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
-
-  PrivateSubnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-        VpcId: !Ref VPC
-        AvailabilityZone: !Select [ 1, !GetAZ's '' ]
-        CirderBlock: !Ref PrivateSubnet1CIDR
-        MapPublicIpOnLaunch: false
-        Tags: 
-            -   Key: Name
-                Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
                 
-  NatGateway1EIP:
+  NatGatewayEIP:
         Type: AWS::EC2::EIP
         DependsOn: AttachGateway
         Properties: 
             Domain: vpc
   
-  NatGateway2EIP:
-        Type: AWS::EC2::EIP
-        DependsOn: AttachGateway
-        Properties: 
-            Domain: vpc
-  
-  NatGateway1: 
+  NatGateway: 
         Type: AWS::EC2::NatGateway
         Properties: 
-            AllocationId: !GetAtt NatGateway1EIP.AllocationId
-            SubnetId: !Ref PublicSubnet1
+            AllocationId: !GetAtt NatGatewayEIP.AllocationId
+            SubnetId: !Ref PublicSubnet
 
-  NatGateway2: 
-        Type: AWS::EC2::NatGateway
-        Properties: 
-            AllocationId: !GetAtt NatGateway1EIP.AllocationId
-            SubnetId: !Ref PublicSubnet2
 Outputs: 
   #Bonus points for useful outputs!
   Description: output will be the public URL of loadbalancer
