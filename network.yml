@@ -1,0 +1,6 @@
+Description: >
+    Ying Kit Ng / Udacity project 2020
+
+Resources:
+    VPC:
+        TYPE: AWS::EC2::VPC

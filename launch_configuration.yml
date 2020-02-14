@@ -1,0 +1,29 @@
+Description: >
+ This template deploys 4 Ubuntu 18 server with two vCPUs and at least 4GB of RAM and 10GB of disk space.
+ 2 server will be located in each of your private subnets. Data will be retrieve from S3 bucket. 
+ Triffic will go through a load balancer
+Parameters:
+# whatever you consider a changing value, put it as a parameter instead of hard-coding it into your script
+Resources:
+  #instace profile contains the IAM Role name(s) that we want to associate to our auto scaling EC2 Servers
+  ProfileWithRolesForOurApp:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Roles:
+        - UdacityS3ReadOnlyEC2
+  
+          #!/bin/bash
+          apt-get update -y
+          apt-get install unzip awscli -y
+          apt-get install apache2 -y
+          systemctl start apache2.service
+          cd /var/www/html
+          aws s3 cp s3://udacity-demo-1/udacity.zip .
+          unzip -o udacity.zip
+
+Outputs: 
+  #Bonus points for useful outputs!
+  Description: output will be the public URL of loadbalancer
+  # Value: 
+  # Export:
+  #   Name:
