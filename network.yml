@@ -13,82 +13,91 @@ Parameters:
         Description: Please enter the IP range (CIDR notation) for this
         Type: String
         Default: 10.0.0.0/16
+    
+    PublicSubnetCIDR:
+        Description: Please enter the IP range (CIDR notation) for this
+        Type: String
+        Default: 10.0.0.0/24
+    PrivateSubnetCIDR:
+        Description: Please enter the IP range (CIDR notation) for this
+        Type: String
+        Default: 10.0.1.0/24
 Resources:
   #instace profile contains the IAM Role name(s) that we want to associate to our auto scaling EC2 Servers
-  ProfileWithRolesForOurApp:
-    Type: AWS::IAM::InstanceProfile
-    Properties: 
-      Roles:
-        - UdacityS3ReadOnlyEC2
+  # ProfileWithRoalesForOurApp:
+  #   Type: AWS::IAM::InstanceProfile
+  #   Properties: 
+      # Roles:
+      #   - UdacityS3ReadOnlyEC2
   
-          #!/bin/bash
-          apt-get update -y
-          apt-get install unzip awscli -y
-          apt-get install apache2 -y
-          systemctl start apache2.service
-          cd /var/www/html
-          aws s3 cp s3://udacity-demo-1/udacity.zip .
-          unzip -o udacity.zip
-  VPC:
-        TYPE: AWS::EC2::VPC
+      #     #!/bin/bash
+      #     apt-get update -y
+      #     apt-get install unzip awscli -y
+      #     apt-get install apache2 -y
+      #     systemctl start apache2.service
+      #     cd /var/www/html
+      #     aws s3 cp s3://udacity-demo-1/udacity.zip .
+      #     unzip -o udacity.zip
+    yingsUdacityVPC:
+        Type: AWS::EC2::VPC
         Properties: 
-          CidrBlock: !Ref VpcCIDR
-          EnableDnsHostnames: true
-          EnableDnsSupport: Boolean
-          InstanceTenancy: String
-          Tags: 
-            - Key: Name
-              Value: !Ref EnvironmentName
-  InternetGateway:
-    Type: AWS::EC2::InternetGateway
-    Properties:
-      Tags:
-      - Key: Name 
-        Value: EnvironmentName
+            CidrBlock: !Ref VpcCIDR
+            EnableDnsHostnames: true
+            # EnableDnsSupport: Boolean
+            # InstanceTenancy: String
+            Tags: 
+                - Key: Name
+                  Value: !Ref EnvironmentName
+    InternetGateway:
+        Type: AWS::EC2::InternetGateway
+        Properties:
+            Tags:
+                - Key: Name 
+                  Value: !Ref EnvironmentName
 
-  AttachGateway:
-    Type: AWS::EC2::VPCGatewayAttachment
-    Properties:
-      VpcId: !Ref VPC
-      InternetGatewayId: !Ref InternetGateway
+    AttachGateway:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+            VpcId: !Ref yingsUdacityVPC
+            InternetGatewayId: !Ref InternetGateway
 
-  PublicSubnet:
-    Type: AWS::EC2::Subnet
-    Properties:
-        VpcId: !Ref VPC
-        AvailabilityZone: !Select [ 0, !GetAZ's '' ]
-        CirderBlock: !Ref PublicSubnetCIDR
-        MapPublicIpOnLaunch: false
-        Tags: 
-            -   Key: Name
-                Value: !Sub ${EnvironmentName} PublicSubnet (AZ1)
+    PublicSubnet:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref yingsUdacityVPC
+            AvailabilityZone: !Select [ 0, !GetAZs '' ]
+            CidrBlock: !Ref PublicSubnetCIDR
+            MapPublicIpOnLaunch: false
+            Tags: 
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} PublicSubnet (AZ1)
 
-  PrivateSubnet:
-    Type: AWS::EC2::Subnet
-    Properties:
-        VpcId: !Ref VPC
-        AvailabilityZone: !Select [ 0, !GetAZ's '' ]
-        CirderBlock: !Ref PrivateSubnet1CIDR
-        MapPublicIpOnLaunch: false
-        Tags: 
-            -   Key: Name
-                Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
+    PrivateSubnet:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref yingsUdacityVPC
+            AvailabilityZone: !Select [ 0, !GetAZs '' ]
+            CidrBlock: !Ref PrivateSubnetCIDR
+            MapPublicIpOnLaunch: false
+            Tags: 
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
                 
-  NatGatewayEIP:
+    NatGatewayEIP:
         Type: AWS::EC2::EIP
         DependsOn: AttachGateway
         Properties: 
             Domain: vpc
-  
-  NatGateway: 
+    
+    NatGateway: 
         Type: AWS::EC2::NatGateway
         Properties: 
             AllocationId: !GetAtt NatGatewayEIP.AllocationId
             SubnetId: !Ref PublicSubnet
 
-Outputs: 
+# Outputs: 
   #Bonus points for useful outputs!
-  Description: output will be the public URL of loadbalancer
-  # Value: 
+  # Description: output will be the public URL of loadbalancer
+  # Value:  { "Fn::Join" : ["", ["http://", { "Ref" : "URL" } ]] },
   # Export:
-  #   Name:
+  #   Name: applicationURL
